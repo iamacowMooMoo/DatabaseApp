@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Transaction - Select Customer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #555; font-weight: bold; }
+        input[type="text"] { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+        input[type="text"]:focus { outline: none; border-color: #4facfe; }
+        .radio-group { display: flex; gap: 20px; margin-bottom: 20px; }
+        .radio-group label { display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; }
+        .search-results { margin-top: 20px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; display: none; }
+        .search-results table { width: 100%; border-collapse: collapse; }
+        .search-results th { background: #4facfe; color: white; padding: 12px; text-align: left; }
+        .search-results td { padding: 12px; border-bottom: 1px solid #eee; }
+        .search-results tr:hover { background: #f5f5f5; cursor: pointer; }
+        .search-results tr.selected { background: #e3f2fd; }
+        button { background: #4facfe; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        button:hover { opacity: 0.9; }
+        .register-btn { background: #4caf50; margin-top: 20px; width: 100%; }
+        .back { display: inline-block; margin-bottom: 20px; color: #4facfe; text-decoration: none; }
+        .selected-customer { background: #e8f5e9; padding: 20px; border-radius: 8px; margin-top: 20px; display: none; border-left: 4px solid #4caf50; }
+        .no-results { padding: 20px; text-align: center; color: #666; display: none; background: #f9f9f9; border-radius: 8px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/cashier/{{ session.get('cashier_eid', 1) }}" class="back">← Back to Dashboard</a>
+        
+        <div class="header">
+            <h1>💰 New Transaction</h1>
+            <p>Search and select a customer</p>
+        </div>
+        
+        <div class="card">
+            <h3 style="margin-bottom: 20px;">Find Customer</h3>
+            
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="search_type" value="name" checked onchange="clearSearch()">
+                    Search by Name
+                </label>
+                <label>
+                    <input type="radio" name="search_type" value="mobile" onchange="clearSearch()">
+                    Search by Mobile
+                </label>
+            </div>
+            
+            <div class="form-group">
+                <input type="text" id="search-input" placeholder="Type at least 2 characters..." autocomplete="off" oninput="searchCustomers(this.value)">
+            </div>
+            
+            <!-- Search Results -->
+            <div id="search-results" class="search-results">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Mobile</th>
+                            <th>NRIC/Passport</th>
+                            <th>Select</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body"></tbody>
+                </table>
+            </div>
+            
+            <!-- No Results -->
+            <div id="no-results" class="no-results">
+                <p>No customers found matching your search.</p>
+                <p>Would you like to register a new customer?</p>
+            </div>
+            
+            <!-- Selected Customer -->
+            <div id="selected-customer" class="selected-customer">
+                <h4>✓ Selected Customer</h4>
+                <p><strong id="sel-name"></strong></p>
+                <p>Mobile: <span id="sel-mobile"></span></p>
+                <p>NRIC: <span id="sel-nric"></span></p>
+                <form action="/cashier/create-transaction" method="POST" style="margin-top: 15px;">
+                    <input type="hidden" name="customer_id" id="sel-cid">
+                    <button type="submit">Start New Transaction</button>
+                </form>
+            </div>
+            
+            <!-- Register New Customer Button -->
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee;">
+                <p style="color: #666; margin-bottom: 10px;">Can't find the customer?</p>
+                <a href="/cashier/register-customer">
+                    <button class="register-btn">+ Register New Customer</button>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let searchTimer;
+        
+        function searchCustomers(query) {
+            clearTimeout(searchTimer);
+            
+            if (query.length < 2) {
+                document.getElementById('search-results').style.display = 'none';
+                document.getElementById('no-results').style.display = 'none';
+                return;
+            }
+            
+            searchTimer = setTimeout(() => {
+                const searchBy = document.querySelector('input[name="search_type"]:checked').value;
+                
+                fetch(`/cashier/api/search-customers?q=${encodeURIComponent(query)}&by=${searchBy}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        displayResults(data);
+                    });
+            }, 300);
+        }
+        
+        function displayResults(customers) {
+            const resultsDiv = document.getElementById('search-results');
+            const resultsBody = document.getElementById('results-body');
+            const noResults = document.getElementById('no-results');
+            
+            if (customers.length === 0) {
+                resultsDiv.style.display = 'none';
+                noResults.style.display = 'block';
+                return;
+            }
+            
+            noResults.style.display = 'none';
+            resultsBody.innerHTML = '';
+            
+            customers.forEach(c => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${c.name}</td>
+                    <td>${c.mobile}</td>
+                    <td>${c.nric || '-'}</td>
+                    <td><button type="button" onclick="selectCustomer(${c.cid}, '${c.name}', '${c.mobile}', '${c.nric}')">Select</button></td>
+                `;
+                resultsBody.appendChild(row);
+            });
+            
+            resultsDiv.style.display = 'block';
+        }
+        
+        function selectCustomer(cid, name, mobile, nric) {
+            document.getElementById('sel-cid').value = cid;
+            document.getElementById('sel-name').textContent = name;
+            document.getElementById('sel-mobile').textContent = mobile;
+            document.getElementById('sel-nric').textContent = nric || '-';
+            document.getElementById('selected-customer').style.display = 'block';
+            document.getElementById('search-results').style.display = 'none';
+            document.getElementById('search-input').value = '';
+        }
+        
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('search-results').style.display = 'none';
+            document.getElementById('no-results').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer Dashboard - {{ customer_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .sql-box { background: #2d3748; color: #68d391; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; overflow-x: auto; display: none; white-space: pre-wrap; word-wrap: break-word; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #667eea; color: white; }
+        button { background: #667eea; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        button:hover { opacity: 0.9; }
+        .back { display: inline-block; margin-bottom: 20px; color: #667eea; text-decoration: none; font-weight: bold; }
+        .invoice-box { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px; background: #fafafa; }
+        .invoice-header { font-weight: bold; color: #667eea; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back">← Back to Login</a>
+        
+        <div class="header">
+            <h1>Welcome, {{ customer_name }}</h1>
+            <p>Customer ID: {{ cid }}</p>
+        </div>
+        
+        <!-- Top 3 Therapists -->
+        <div class="card">
+            <h2>⭐ Top 3 Favorite Therapists</h2>
+            {% if top_therapists %}
+            <table>
+                <tr><th>Therapist</th><th>Services Done</th></tr>
+                {% for t in top_therapists %}
+                <tr><td>{{ t[0] }}</td><td>{{ t[1] }}</td></tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p>No service history yet.</p>
+            {% endif %}
+            <button onclick="toggleSQL('sql-therapists')">Show SQL</button>
+            <div id="sql-therapists" class="sql-box">{{ sql_queries.top_therapists }}</div>
+        </div>
+        
+        <!-- Last Therapist -->
+        <div class="card">
+            <h2>🕐 Last Service</h2>
+            {% if last_therapist %}
+            <p><strong>Therapist:</strong> {{ last_therapist[0] }}</p>
+            <p><strong>Service:</strong> {{ last_therapist[2] }}</p>
+            <p><strong>Date:</strong> {{ last_therapist[1] }}</p>
+            {% else %}
+            <p>No service history found.</p>
+            {% endif %}
+            <button onclick="toggleSQL('sql-last')">Show SQL</button>
+            <div id="sql-last" class="sql-box">{{ sql_queries.last_therapist }}</div>
+        </div>
+        
+        <!-- Invoice History -->
+        <div class="card">
+            <h2>🧾 Invoice History</h2>
+            {% for inv in invoices %}
+            <div class="invoice-box">
+                <div class="invoice-header">Invoice #{{ inv.invoice[0] }} - {{ inv.invoice[1] }}</div>
+                <table>
+                    <tr><th>Service</th><th>Therapist</th><th>Cost</th><th>Discount</th><th>Subtotal</th></tr>
+                    {% for item in inv.invoice_items %}
+                    <tr>
+                        <td>{{ item[0] }}</td>
+                        <td>{{ item[1] }}</td>
+                        <td>${{ "%.2f"|format(item[2]) }}</td>
+                        <td>${{ "%.2f"|format(item[3]) }}</td>
+                        <td>${{ "%.2f"|format(item[4]) }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                <p style="text-align: right; margin-top: 10px;">
+                    <strong>Subtotal:</strong> ${{ "%.2f"|format(inv.invoice[2]) }} | 
+                    <strong>Discount:</strong> ${{ "%.2f"|format(inv.invoice[3]) }} | 
+                    <strong>Total:</strong> ${{ "%.2f"|format(inv.invoice[4]) }} | 
+                    <strong>Paid:</strong> ${{ "%.2f"|format(inv.invoice[5]) }} | 
+                    <strong>Status:</strong> {{ inv.invoice[6] }}
+                </p>
+            </div>
+            {% endfor %}
+            <button onclick="toggleSQL('sql-invoices')">Show SQL</button>
+            <div id="sql-invoices" class="sql-box">{{ sql_queries.invoices }}</div>
+        </div>
+    </div>
+    
+    <script>
+        function toggleSQL(id) {
+            var el = document.getElementById(id);
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>

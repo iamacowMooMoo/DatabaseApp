@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Therapist Management - Spa Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 1.8em;
+        }
+        
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: #5a6268;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+        }
+        
+        .tab-btn:hover:not(.active) {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .card.active {
+            display: block;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .form-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .section-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        input, select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .required {
+            color: #e74c3c;
+        }
+        
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 0 0 10px 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .search-result-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+        
+        .search-result-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .result-details {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .selected-therapist {
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #4caf50;
+            margin-bottom: 20px;
+        }
+        
+        .role-list {
+            margin-top: 20px;
+        }
+        
+        .role-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .role-info {
+            flex: 1;
+        }
+        
+        .role-title {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .role-dates {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        .role-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .role-badge.ended {
+            background: #6c757d;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .add-role-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .inline-form {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        
+        .inline-form .form-group {
+            flex: 1;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👤 Therapist Management</h1>
+            <a href="/" class="back-btn">← Back to Home</a>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('add')">➕ Add New Therapist</button>
+            <button class="tab-btn" onclick="switchTab('edit')">✏️ Edit Therapist</button>
+        </div>
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- ADD NEW THERAPIST TAB -->
+        <div id="tab-add" class="card active">
+            <form action="{{ url_for('management.add_therapist') }}" method="POST">
+                <!-- Personal Information -->
+                <div class="form-section">
+                    <h2 class="section-title">👤 Personal Information</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>NRIC/Passport No <span class="required">*</span></label>
+                            <input type="text" name="nric" required placeholder="e.g., S1234567A">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Full Legal Name <span class="required">*</span></label>
+                            <input type="text" name="full_name" required placeholder="As per NRIC">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Work Name <span class="required">*</span></label>
+                            <input type="text" name="work_name" required placeholder="Display name for customers">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Gender <span class="required">*</span></label>
+                            <select name="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Mobile Number <span class="required">*</span></label>
+                            <input type="text" name="mobile" required placeholder="e.g., 91234567">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Nationality <span class="required">*</span></label>
+                            <select name="country_code" required>
+                                <option value="">Select Country</option>
+                                {% for country in countries %}
+                                <option value="{{ country[0] }}">{{ country[1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Employment Details -->
+                <div class="form-section">
+                    <h2 class="section-title">💼 Employment Details</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Employment Start Date <span class="required">*</span></label>
+                            <input type="date" name="employment_start" required 
+                                   value="{{ today }}" 
+                                   onchange="updateRoleStartDate(this.value)">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Employment End Date</label>
+                            <input type="date" name="employment_end" placeholder="Leave blank if ongoing">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Initial Role Assignment -->
+                <div class="form-section">
+                    <h2 class="section-title">🎯 Initial Role Assignment</h2>
+                    <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+                        The role start date will default to the employment start date.
+                    </p>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Role Type <span class="required">*</span></label>
+                            <select name="role_type" required>
+                                <option value="">Select Role</option>
+                                {% for role in roles %}
+                                <option value="{{ role[0] }}">{{ role[1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Role Start Date <span class="required">*</span></label>
+                            <input type="date" name="role_start" id="role_start_date" required value="{{ today }}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Role End Date</label>
+                            <input type="date" name="role_end" placeholder="Leave blank if ongoing">
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px;">
+                    ➕ Add Therapist
+                </button>
+            </form>
+        </div>
+        
+        <!-- EDIT THERAPIST TAB -->
+        <div id="tab-edit" class="card">
+            <!-- Search Section -->
+            <div class="form-section">
+                <h2 class="section-title">🔍 Search Therapist</h2>
+                <div class="search-box">
+                    <input type="text" 
+                           class="search-input" 
+                           id="therapist-search" 
+                           placeholder="Type work name to search..."
+                           autocomplete="off"
+                           oninput="searchTherapists(this.value)">
+                    <div class="search-results" id="search-results"></div>
+                </div>
+                
+                <div id="selected-therapist-display" style="display: none;">
+                    <div class="selected-therapist">
+                        <strong>Selected:</strong> <span id="selected-name"></span>
+                        <span id="selected-status" class="status-badge" style="margin-left: 15px;"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Edit Form (Hidden until therapist selected) -->
+            <div id="edit-form-container" style="display: none;">
+                <form id="edit-form" action="{{ url_for('management.update_therapist') }}" method="POST">
+                    <input type="hidden" name="eid" id="edit-eid">
+                    
+                    <!-- Personal Information -->
+                    <div class="form-section">
+                        <h2 class="section-title">👤 Personal Information</h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>NRIC/Passport No</label>
+                                <input type="text" name="nric" id="edit-nric" readonly style="background: #f5f5f5;">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Full Legal Name</label>
+                                <input type="text" name="full_name" id="edit-full_name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Work Name</label>
+                                <input type="text" name="work_name" id="edit-work_name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Gender</label>
+                                <select name="gender" id="edit-gender" required>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Mobile Number</label>
+                                <input type="text" name="mobile" id="edit-mobile" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Nationality</label>
+                                <select name="country_code" id="edit-country" required>
+                                    {% for country in countries %}
+                                    <option value="{{ country[0] }}">{{ country[1] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Employment Details -->
+                    <div class="form-section">
+                        <h2 class="section-title">💼 Employment Details</h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Employment Start Date</label>
+                                <input type="date" name="employment_start" id="edit-employment_start" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Employment End Date</label>
+                                <input type="date" name="employment_end" id="edit-employment_end">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success" style="width: 100%; margin-bottom: 30px;">
+                        💾 Save Changes
+                    </button>
+                </form>
+                
+                <!-- Role Management Section -->
+                <div class="form-section">
+                    <h2 class="section-title">🎯 Role Management</h2>
+                    
+                    <div class="role-list" id="current-roles">
+                        <!-- Roles will be loaded here dynamically -->
+                    </div>
+                    
+                    <!-- Add New Role -->
+                    <div class="add-role-form">
+                        <h3 style="margin-bottom: 15px; color: #333;">Add New Role</h3>
+                        <form action="{{ url_for('management.add_role') }}" method="POST" class="inline-form">
+                            <input type="hidden" name="eid" id="role-eid">
+                            
+                            <div class="form-group">
+                                <label>Role Type</label>
+                                <select name="role_type" required>
+                                    <option value="">Select Role</option>
+                                    {% for role in roles %}
+                                    <option value="{{ role[0] }}">{{ role[1] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Start Date</label>
+                                <input type="date" name="start_date" required value="{{ today }}">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>End Date</label>
+                                <input type="date" name="end_date">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Add Role</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="no-selection" class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <p>Search for a therapist above to edit their details</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tab Switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+        
+        // Update role start date when employment start changes
+        function updateRoleStartDate(date) {
+            document.getElementById('role_start_date').value = date;
+        }
+        
+        // Search Therapists
+        let searchTimer;
+        function searchTherapists(query) {
+            clearTimeout(searchTimer);
+            
+            if (query.length < 2) {
+                document.getElementById('search-results').style.display = 'none';
+                return;
+            }
+            
+            searchTimer = setTimeout(() => {
+                fetch(`/management/api/search-therapists?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        displaySearchResults(data);
+                    });
+            }, 300);
+        }
+        
+        function displaySearchResults(therapists) {
+            const resultsDiv = document.getElementById('search-results');
+            
+            if (therapists.length === 0) {
+                resultsDiv.innerHTML = '<div class="search-result-item">No therapists found</div>';
+                resultsDiv.style.display = 'block';
+                return;
+            }
+            
+            resultsDiv.innerHTML = therapists.map(t => `
+                <div class="search-result-item" onclick="selectTherapist(${t.eid})">
+                    <div class="result-name">${t.work_name}</div>
+                    <div class="result-details">${t.name} | ${t.mobile} | ${t.status}</div>
+                </div>
+            `).join('');
+            
+            resultsDiv.style.display = 'block';
+        }
+        
+        // Select Therapist for Editing
+        function selectTherapist(eid) {
+            document.getElementById('search-results').style.display = 'none';
+            document.getElementById('therapist-search').value = '';
+            
+            fetch(`/management/api/therapist/${eid}`)
+                .then(response => response.json())
+                .then(data => {
+                    populateEditForm(data);
+                });
+        }
+        
+        function populateEditForm(data) {
+            const therapist = data.therapist;
+            const roles = data.roles;
+            
+            // Show form, hide empty state
+            document.getElementById('no-selection').style.display = 'none';
+            document.getElementById('edit-form-container').style.display = 'block';
+            document.getElementById('selected-therapist-display').style.display = 'block';
+            
+            // Fill basic info
+            document.getElementById('edit-eid').value = therapist.eid;
+            document.getElementById('role-eid').value = therapist.eid;
+            document.getElementById('edit-nric').value = therapist.nric;
+            document.getElementById('edit-full_name').value = therapist.name;
+            document.getElementById('edit-work_name').value = therapist.work_name;
+            document.getElementById('edit-gender').value = therapist.gender;
+            document.getElementById('edit-mobile').value = therapist.mobile;
+            document.getElementById('edit-country').value = therapist.country_code;
+            document.getElementById('edit-employment_start').value = therapist.employment_start;
+            document.getElementById('edit-employment_end').value = therapist.employment_end || '';
+            
+            // Show selected info
+            document.getElementById('selected-name').textContent = `${therapist.work_name} (${therapist.name})`;
+            const statusBadge = document.getElementById('selected-status');
+            if (therapist.is_active) {
+                statusBadge.textContent = 'Active';
+                statusBadge.className = 'status-badge status-active';
+            } else {
+                statusBadge.textContent = 'Inactive';
+                statusBadge.className = 'status-badge status-inactive';
+            }
+            
+            // Populate roles
+            const rolesContainer = document.getElementById('current-roles');
+            if (roles.length === 0) {
+                rolesContainer.innerHTML = '<p style="color: #666; font-style: italic;">No roles assigned</p>';
+            } else {
+                rolesContainer.innerHTML = roles.map(r => `
+                    <div class="role-item">
+                        <div class="role-info">
+                            <div class="role-title">${r.role_type}</div>
+                            <div class="role-dates">
+                                ${r.start_date} to ${r.end_date || 'Present'}
+                            </div>
+                        </div>
+                        <span class="role-badge ${r.is_active ? '' : 'ended'}">
+                            ${r.is_active ? 'Active' : 'Ended'}
+                        </span>
+                        ${r.is_active ? `
+                            <form action="/management/end-role" method="POST" style="margin-left: 10px;">
+                                <input type="hidden" name="rid" value="${r.rid}">
+                                <input type="hidden" name="eid" value="${therapist.eid}">
+                                <button type="submit" class="btn btn-danger btn-small" 
+                                        onclick="return confirm('End this role today?')">
+                                    End Role
+                                </button>
+                            </form>
+                        ` : ''}
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-box')) {
+                document.getElementById('search-results').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

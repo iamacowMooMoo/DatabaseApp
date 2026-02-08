@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select Service - Transaction #{{ transaction[0] }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #555; font-weight: bold; }
+        select, input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+        select:focus, input:focus { outline: none; border-color: #4facfe; }
+        .service-option { padding: 15px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+        .service-option:hover { border-color: #4facfe; background: #f0f8ff; }
+        .service-option input[type="radio"] { width: auto; margin-right: 10px; }
+        .service-name { font-weight: bold; font-size: 1.1em; }
+        .service-details { color: #666; margin-top: 5px; font-size: 14px; }
+        button { background: #4facfe; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-size: 18px; width: 100%; margin-top: 20px; }
+        button:hover { opacity: 0.9; }
+        .back { display: inline-block; margin-bottom: 20px; color: #4facfe; text-decoration: none; }
+        .discount-section { background: #fff3cd; padding: 20px; border-radius: 8px; margin-top: 20px; border: 2px dashed #ffc107; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .summary-box { background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/cashier/transaction/{{ tid }}/schedule" class="back">← Back to Schedule</a>
+        
+        <div class="header">
+            <h1>💆 Select Service</h1>
+            <p>Customer: {{ transaction[1] }} | Scheduled: {{ scheduled_start }}</p>
+        </div>
+        
+        <div class="card">
+            <form action="/cashier/transaction/{{ tid }}/add-service-step3" method="POST">
+                <input type="hidden" name="scheduled_date" value="{{ scheduled_start.split(' ')[0] }}">
+                <input type="hidden" name="scheduled_hour" value="{{ scheduled_start.split(' ')[1].split(':')[0] }}">
+                <input type="hidden" name="scheduled_minute" value="{{ scheduled_start.split(' ')[1].split(':')[1] }}">
+                
+                <h3 style="margin-bottom: 20px;">Available Services</h3>
+                
+                {% for service in services %}
+                <label class="service-option" onclick="selectService(this, {{ service[2] }}, '{{ service[1] }}')">
+                    <input type="radio" name="service_id" value="{{ service[0] }}" required>
+                    <span class="service-name">{{ service[1] }}</span>
+                    <div class="service-details">
+                        Duration: {{ service[3] }} mins | Base Cost: ${{ "%.2f"|format(service[2]) }} | Required Role: {{ service[4] }}
+                    </div>
+                </label>
+                {% endfor %}
+                
+                <!-- Discount Section -->
+                <div class="discount-section">
+                    <h4>🎁 Apply Discount (Optional)</h4>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Discount Amount ($)</label>
+                            <input type="number" name="item_discount" id="item_discount" step="0.01" min="0" value="0" onchange="calculateTotal()">
+                        </div>
+                        <div class="form-group">
+                            <label>Discount Reason</label>
+                            <select name="item_discount_type" id="item_discount_type">
+                                <option value="none">No Discount</option>
+                                <option value="promo">Promotional Discount</option>
+                                <option value="waiver">Management Waiver</option>
+                                <option value="management">Management Override</option>
+                                <option value="staff">Staff Discount</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Summary -->
+                <div class="summary-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <p style="margin: 0; color: #666;">Selected Service</p>
+                            <p style="margin: 5px 0; font-weight: bold;" id="selected-service-name">-</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="margin: 0; color: #666;">Final Price</p>
+                            <p style="margin: 5px 0; font-size: 1.5em; font-weight: bold; color: #4facfe;" id="final-price">$0.00</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit">Continue to Select Therapist & Room →</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let selectedCost = 0;
+        
+        function selectService(element, cost, name) {
+            // Remove selected class from all options
+            document.querySelectorAll('.service-option').forEach(el => {
+                el.style.borderColor = '#ddd';
+                el.style.background = 'white';
+            });
+            
+            // Add selected style
+            element.style.borderColor = '#4facfe';
+            element.style.background = '#f0f8ff';
+            
+            // Check the radio button
+            element.querySelector('input[type="radio"]').checked = true;
+            
+            selectedCost = cost;
+            document.getElementById('selected-service-name').textContent = name;
+            calculateTotal();
+        }
+        
+        function calculateTotal() {
+            const discount = parseFloat(document.getElementById('item_discount').value) || 0;
+            const finalPrice = Math.max(0, selectedCost - discount);
+            document.getElementById('final-price').textContent = '$' + finalPrice.toFixed(2);
+        }
+    </script>
+</body>
+</html>

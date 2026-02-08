@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scheduling Conflict</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 50px auto; }
+        .error-card { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+        .error-icon { font-size: 4em; color: #e74c3c; margin-bottom: 20px; }
+        h1 { color: #e74c3c; margin-bottom: 20px; }
+        p { color: #555; font-size: 1.1em; margin-bottom: 30px; }
+        button { background: #4facfe; color: white; border: none; padding: 15px 30px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-card">
+            <div class="error-icon">⚠️</div>
+            <h1>Scheduling Conflict</h1>
+            <p>{{ message }}</p>
+            <button onclick="history.back()">← Go Back</button>
+        </div>
+    </div>
+</body>
+</html>

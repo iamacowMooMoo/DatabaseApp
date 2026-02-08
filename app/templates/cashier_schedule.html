@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Schedule Service - Step 1</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 700px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 15px; color: #555; font-weight: bold; font-size: 16px; }
+        input[type="date"] { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 18px; margin-bottom: 10px; }
+        
+        /* Time Grid Styles */
+        .time-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .time-btn { 
+            flex: 1; 
+            min-width: 60px; 
+            padding: 20px 15px; 
+            border: 2px solid #ddd; 
+            background: white; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 20px; 
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .time-btn:hover { border-color: #4facfe; background: #f0f8ff; }
+        .time-btn.selected { 
+            background: #4facfe; 
+            color: white; 
+            border-color: #4facfe;
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+        }
+        .time-btn.disabled { opacity: 0.3; cursor: not-allowed; }
+        
+        .selection-display { 
+            background: #e3f2fd; 
+            padding: 20px; 
+            border-radius: 8px; 
+            text-align: center; 
+            margin: 20px 0;
+            font-size: 24px;
+            font-weight: bold;
+            color: #1976d2;
+            min-height: 30px;
+        }
+        
+        .next-btn { 
+            background: #ccc; 
+            color: white; 
+            border: none; 
+            padding: 18px; 
+            border-radius: 8px; 
+            cursor: not-allowed; 
+            font-size: 18px; 
+            width: 100%;
+            transition: all 0.2s;
+        }
+        .next-btn.active { 
+            background: #4caf50; 
+            cursor: pointer;
+        }
+        .next-btn.active:hover { background: #45a049; }
+        
+        .back { display: inline-block; margin-bottom: 20px; color: #4facfe; text-decoration: none; }
+        .step-indicator { color: #999; font-size: 14px; margin-bottom: 10px; }
+        .section-title { color: #666; font-size: 14px; margin: 15px 0 10px 0; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/cashier/transaction/{{ transaction[0] }}" class="back">← Back to Transaction</a>
+        
+        <div class="header">
+            <div class="step-indicator">Step 1 of 3: Select Time</div>
+            <h1>📅 When is the appointment?</h1>
+            <p>Customer: {{ transaction[1] }}</p>
+        </div>
+        
+        <div class="card">
+            <!-- Date Selection -->
+            <div class="form-group">
+                <label>Select Date</label>
+                <input type="date" id="date-input" name="scheduled_date" value="{{ default_date }}" required>
+            </div>
+            
+            <!-- Time Selection -->
+            <div class="form-group">
+                <div class="section-title">Step 1: Click an Hour</div>
+                <div class="time-grid" id="hour-grid" style="grid-template-columns: repeat(8, 1fr);">
+                    {% for h in range(0, 24) %}
+                    <button type="button" class="time-btn" onclick="selectHour({{ h }})" data-hour="{{ h }}" style="min-width: 50px; padding: 15px 10px; font-size: 18px;">
+                        {{ '%02d'|format(h) }}
+                    </button>
+                    {% endfor %}
+                </div>
+                
+                <div class="section-title">Step 2: Click Minutes (5-min intervals)</div>
+                <div class="time-grid" id="minute-grid" style="grid-template-columns: repeat(6, 1fr);">
+                    {% for m in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55] %}
+                    <button type="button" class="time-btn" onclick="selectMinute({{ m }})" data-minute="{{ '%02d'|format(m) }}" style="min-width: 50px; padding: 15px 10px; font-size: 18px;">
+                        {{ '%02d'|format(m) }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Selection Display -->
+            <div class="selection-display" id="selection-display">
+                Select time above
+            </div>
+            
+            <!-- Hidden Form -->
+            <form action="/cashier/transaction/{{ transaction[0] }}/add-service-step2" method="POST" id="time-form">
+                <input type="hidden" name="scheduled_date" id="form-date" value="{{ default_date }}">
+                <input type="hidden" name="scheduled_hour" id="form-hour">
+                <input type="hidden" name="scheduled_minute" id="form-minute">
+                <button type="submit" class="next-btn" id="next-btn" disabled>
+                    Next: Select Service →
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let selectedHour = null;
+        let selectedMinute = null;
+        
+        function selectHour(hour) {
+            selectedHour = hour;
+            
+            // Visual feedback
+            document.querySelectorAll('#hour-grid .time-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.querySelector(`#hour-grid [data-hour="${hour}"]`).classList.add('selected');
+            
+            updateDisplay();
+        }
+        
+        function selectMinute(minute) {
+            if (selectedHour === null) {
+                alert('Please select an hour first');
+                return;
+            }
+            
+            selectedMinute = minute;
+            
+            // Visual feedback
+            document.querySelectorAll('#minute-grid .time-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.querySelector(`#minute-grid [data-minute="${minute < 10 ? '0'+minute : minute}"]`).classList.add('selected');
+            
+            updateDisplay();
+        }
+        
+        function updateDisplay() {
+            const date = document.getElementById('date-input').value;
+            document.getElementById('form-date').value = date;
+            
+            if (selectedHour !== null && selectedMinute !== null) {
+                const timeStr = `${String(selectedHour).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')}`;
+                document.getElementById('selection-display').textContent = 
+                    `${date} at ${timeStr}`;
+                
+                // Enable next button
+                const nextBtn = document.getElementById('next-btn');
+                nextBtn.disabled = false;
+                nextBtn.classList.add('active');
+                nextBtn.textContent = `Next: Select Service →`;
+                
+                // Update hidden form fields
+                document.getElementById('form-hour').value = selectedHour;
+                document.getElementById('form-minute').value = selectedMinute;
+            } else if (selectedHour !== null) {
+                document.getElementById('selection-display').textContent = 
+                    `${date} at ${String(selectedHour).padStart(2, '0')}:__ (select minutes)`;
+            }
+        }
+        
+        // Update display when date changes
+        document.getElementById('date-input').addEventListener('change', updateDisplay);
+    </script>
+</body>
+</html>

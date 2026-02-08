@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transaction #{{ transaction[0] }} - Manage Services</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .outstanding-banner { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        .outstanding-banner h2 { margin: 0; font-size: 1.5em; }
+        .outstanding-amount { font-size: 3em; font-weight: bold; margin: 10px 0; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #4facfe; color: white; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; }
+        select, input { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 14px; }
+        button { background: #4facfe; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        button:hover { opacity: 0.9; }
+        button.danger { background: #e74c3c; }
+        button.danger:hover { background: #c0392b; }
+        button.warning { background: #f39c12; }
+        button.warning:hover { background: #e67e22; }
+        button.success { background: #27ae60; }
+        button.success:hover { background: #229954; }
+        button.info { background: #3498db; }
+        button.info:hover { background: #2980b9; }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .back { display: inline-block; margin-bottom: 20px; color: #4facfe; text-decoration: none; font-weight: bold; }
+        .status-pending { color: orange; font-weight: bold; }
+        .status-partial { color: blue; font-weight: bold; }
+        .status-paid { color: green; font-weight: bold; }
+        .time-display { font-family: monospace; font-size: 1.1em; color: #555; }
+        .action-buttons { display: flex; gap: 8px; }
+        .action-buttons form { display: inline; }
+        .sidebar { display: flex; flex-direction: column; gap: 20px; }
+        .exit-shop-banner { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .exit-shop-banner.customer-in { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .exit-shop-banner.customer-out { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); }
+        .payment-method { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; }
+        .payment-method select { width: 150px; }
+        .payment-method input { width: 120px; }
+        .add-payment-btn { background: #28a745; margin-top: 10px; }
+        .payment-history { margin-top: 15px; }
+        .payment-item { display: flex; justify-content: space-between; padding: 8px; background: #e8f5e9; border-radius: 5px; margin-bottom: 5px; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 10% auto; padding: 30px; border-radius: 10px; width: 500px; max-width: 90%; }
+        .modal-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #eee; }
+        .close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; color: #aaa; }
+        .close:hover { color: #000; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .service-row:hover { background: #f8f9fa; }
+        .full-edit-btn { background: #9b59b6; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .full-edit-btn:hover { background: #8e44ad; }
+        
+        /* New styles for cascading dropdowns */
+        #full-edit-service option,
+        #full-edit-therapist option {
+            padding: 8px;
+        }
+        
+        #full-edit-therapist.role-match {
+            border-color: #28a745 !important;
+            background-color: #f8fff8 !important;
+        }
+        
+        #full-edit-therapist.role-mismatch {
+            border-color: #dc3545 !important;
+            background-color: #fff8f8 !important;
+        }
+        
+        .role-validation {
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .role-validation.match {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .role-validation.mismatch {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* Service option styling */
+        .service-option-group {
+            font-weight: bold;
+            color: #666;
+            padding: 5px 10px;
+            margin-top: 10px;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/cashier/{{ session.get('cashier_eid', 1) }}" class="back">← Back to Dashboard</a>
+        
+        <!-- Exit Shop Banner -->
+        {% if transaction[3] and not transaction[8] %}
+        <div class="exit-shop-banner customer-in">
+            <div>
+                <h3>🏃 Customer In Shop</h3>
+                <p>Entry Time: <span class="time-display">{{ transaction[3].strftime('%Y-%m-%d %H:%M:%S') }}</span></p>
+            </div>
+            <form action="/cashier/record-exit/{{ transaction[0] }}" method="POST" onsubmit="return confirm('Record customer exit? This cannot be undone.');">
+                <button type="submit" class="danger" style="font-size: 16px; padding: 15px 30px;">🚪 Record Exit</button>
+            </form>
+        </div>
+        {% elif transaction[8] %}
+        <div class="exit-shop-banner customer-out">
+            <div>
+                <h3>✅ Customer Departed</h3>
+                <p>Entry: <span class="time-display">{{ transaction[3].strftime('%H:%M') }}</span> | Exit: <span class="time-display">{{ transaction[8].strftime('%H:%M') }}</span></p>
+            </div>
+            <span style="font-size: 2em;">👋</span>
+        </div>
+        {% else %}
+        <div class="exit-shop-banner customer-in">
+            <div>
+                <h3>🆕 New Transaction</h3>
+                <p>Customer entry time will be recorded automatically</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Outstanding Amount Banner -->
+        <div class="outstanding-banner">
+            <h2>💰 Outstanding Amount</h2>
+            <div class="outstanding-amount">${{ "%.2f"|format(outstanding) }}</div>
+            <p>Total: ${{ "%.2f"|format(transaction[5]) }} | Paid: ${{ "%.2f"|format(transaction[6]) }} | Discount: ${{ "%.2f"|format(transaction[7]) }}</p>
+        </div>
+        
+        <div class="header">
+            <h1>🧾 Transaction #{{ transaction[0] }}</h1>
+            <p>Customer: {{ transaction[1] }} | Mobile: {{ transaction[2] }} | Status: <span class="status-{{ transaction[4] }}">{{ transaction[4]|upper }}</span></p>
+        </div>
+        
+        <div class="grid">
+            <!-- Main Content - Services -->
+            <div>
+                <div class="card">
+                    <h3>Services ({{ items|length }})</h3>
+                    {% if items %}
+                    <table>
+                        <tr>
+                            <th>Service</th>
+                            <th>Therapist</th>
+                            <th>Room</th>
+                            <th>Scheduled Start</th>
+                            <th>Scheduled End</th>
+                            <th>Actions</th>
+                        </tr>
+                        {% for item in items %}
+                        <tr class="service-row">
+                            <td><strong>{{ item[1] }}</strong></td>
+                            <td>{{ item[2] }}</td>
+                            <td>{{ item[9] }}</td>
+                            <td class="time-display">
+                                {% if item[5] %}
+                                    {{ item[5].strftime('%H:%M') }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="time-display">
+                                {% if item[6] %}
+                                    {{ item[6].strftime('%H:%M') }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    {% if not item[6] and not item[7] %}
+                                    <!-- Not started yet - show Start button (green) -->
+                                    <form action="/cashier/start-service/{{ item[0] }}" method="POST">
+                                        <button type="submit" class="success">▶ Start</button>
+                                    </form>
+                                    <button type="button" class="full-edit-btn" onclick="openFullEditModal({{ item[0] }}, '{{ item[1] }}', {{ item[10] }}, '{{ item[5] }}', {{ item[3] }}, {{ item[4] }}, '{{ item[8] }}', {{ item[11] }}, {{ item[12] }})">✏️ Edit</button>
+                                    <form action="/cashier/delete-item/{{ item[0] }}" method="POST" onsubmit="return confirm('Delete this service?');">
+                                        <button type="submit" class="danger">🗑</button>
+                                    </form>
+                                    {% elif item[6] and not item[7] %}
+                                    <!-- Started but not ended - show End button (red) -->
+                                    <form action="/cashier/end-service/{{ item[0] }}" method="POST">
+                                        <button type="submit" class="danger">⏹ End</button>
+                                    </form>
+                                    {% else %}
+                                    <!-- Completed -->
+                                    <span style="color: #27ae60; font-weight: bold;">✓ Completed</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                    {% else %}
+                    <p>No services added yet.</p>
+                    {% endif %}
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #eee;">
+                        <a href="/cashier/transaction/{{ transaction[0] }}/schedule">
+                            <button style="width: 100%;">+ Add New Service</button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar - Payment -->
+            <div class="sidebar">
+                <div class="card">
+                    <h3>💳 Payment</h3>
+                    
+                    <!-- Payment Summary -->
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>Subtotal:</span>
+                            <strong>${{ "%.2f"|format(transaction[5]) }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #e74c3c;">
+                            <span>Discounts:</span>
+                            <strong>-${{ "%.2f"|format(transaction[7]) }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>Amount Due:</span>
+                            <strong>${{ "%.2f"|format(outstanding + total_paid) }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #27ae60;">
+                            <span>Total Paid:</span>
+                            <strong>${{ "%.2f"|format(total_paid) }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 2px solid #ddd; font-size: 1.2em;">
+                            <span>Outstanding:</span>
+                            <strong style="color: #e74c3c;">${{ "%.2f"|format(outstanding) }}</strong>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment History -->
+                    {% if payments %}
+                    <div class="payment-history">
+                        <h4>Payment History</h4>
+                        {% for p in payments %}
+                        <div class="payment-item">
+                            <span>{{ p[1] }} - {{ p[3].strftime('%H:%M') }}</span>
+                            <strong>${{ "%.2f"|format(p[2]) }}</strong>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Add Payment Form -->
+                    {% if outstanding > 0 %}
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #eee;">
+                        <h4>Add Payment</h4>
+                        <form action="/cashier/add-payment/{{ transaction[0] }}" method="POST" id="payment-form">
+                            <div id="payment-methods">
+                                <div class="payment-method">
+                                    <select name="payment_method[]" required>
+                                        <option value="">Select Method</option>
+                                        <option value="Cash">💵 Cash</option>
+                                        <option value="Credit Card">💳 Credit Card</option>
+                                        <option value="NETS">🏧 NETS</option>
+                                        <option value="PayNow">📱 PayNow</option>
+                                        <option value="eWallet">📲 eWallet</option>
+                                        <option value="Voucher">🎫 Voucher</option>
+                                    </select>
+                                    <input type="number" name="payment_amount[]" step="0.01" min="0.01" max="{{ outstanding }}" placeholder="Amount" required>
+                                    <button type="button" class="danger" onclick="removePaymentMethod(this)" style="padding: 8px 12px;">×</button>
+                                </div>
+                            </div>
+                            <button type="button" class="add-payment-btn" onclick="addPaymentMethod()">+ Add Another Method</button>
+                            <div style="margin-top: 15px;">
+                                <button type="submit" class="success" style="width: 100%; font-size: 16px; padding: 15px;">Process Payment</button>
+                            </div>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div style="background: #d4edda; color: #155724; padding: 20px; border-radius: 8px; text-align: center; margin-top: 15px;">
+                        <h3>✅ Fully Paid</h3>
+                        <p>This transaction has been fully paid.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Service Modal -->
+    <!-- FULL EDIT MODAL -->
+    <div id="fullEditModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeFullEditModal()">&times;</span>
+                <h2>✏️ Edit Service (Full)</h2>
+                <p style="color: #666; font-size: 14px; margin-top: 5px;">Cascading dropdowns ensure therapist can perform selected service</p>
+            </div>
+            <form action="/cashier/full-edit-item" method="POST" id="full-edit-form">
+                <input type="hidden" name="ttid" id="full-edit-ttid">
+                <input type="hidden" name="tid" value="{{ transaction[0] }}">
+                
+                <div style="background: #f8f9fa; padding: 10px; margin: 20px 0 10px 0; border-left: 4px solid #4facfe; font-weight: bold;">Change Service</div>
+                <div class="form-group">
+                    <label>Select Service</label>
+                    <select name="service_id" id="full-edit-service" required 
+                            onchange="filterTherapistsByService(); updateFullEditTotal();">
+                        <!-- Will be populated by JavaScript -->
+                    </select>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Original Cost ($)</label>
+                        <input type="number" id="full-edit-cost-display" disabled style="background: #f5f5f5;">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (mins)</label>
+                        <input type="number" id="full-edit-duration-display" disabled style="background: #f5f5f5;">
+                    </div>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 10px; margin: 20px 0 10px 0; border-left: 4px solid #4facfe; font-weight: bold;">Change Time</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" name="scheduled_date" id="full-edit-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Hour</label>
+                        <select name="scheduled_hour" id="full-edit-hour" required>
+                            {% for h in range(0, 24) %}
+                            <option value="{{ '%02d'|format(h) }}">{{ '%02d'|format(h) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Minute</label>
+                        <select name="scheduled_minute" id="full-edit-minute" required>
+                            {% for m in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55] %}
+                            <option value="{{ '%02d'|format(m) }}">{{ '%02d'|format(m) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 10px; margin: 20px 0 10px 0; border-left: 4px solid #4facfe; font-weight: bold;">Change Therapist & Room</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Therapist</label>
+                        <select name="therapist_id" id="full-edit-therapist" required 
+                                onchange="validateTherapistRole();">
+                            <!-- Will be populated by JavaScript -->
+                        </select>
+                        <div id="therapist-role-validation" class="role-validation">
+                            <!-- Validation message will appear here -->
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Room</label>
+                        <select name="room_id" id="full-edit-room" required>
+                            <!-- Will be populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 10px; margin: 20px 0 10px 0; border-left: 4px solid #4facfe; font-weight: bold;">Update Discount</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Discount Amount ($)</label>
+                        <input type="number" name="item_discount" id="full-edit-discount" step="0.01" min="0" value="0" onchange="updateFullEditTotal()">
+                    </div>
+                    <div class="form-group">
+                        <label>Discount Reason</label>
+                        <select name="item_discount_type" id="full-edit-discount-type">
+                            <option value="none">No Discount</option>
+                            <option value="promo">Promotional Discount</option>
+                            <option value="waiver">Management Waiver</option>
+                            <option value="management">Management Override</option>
+                            <option value="staff">Staff Discount</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                    <strong>New Total: $<span id="full-edit-new-total">0.00</span></strong>
+                    <div id="service-role-info" style="font-size: 12px; color: #666; margin-top: 5px;"></div>
+                </div>
+                
+                <button type="submit" class="success" style="width: 100%;" id="save-edit-btn">💾 Save All Changes</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Payment Methods Management
+        function addPaymentMethod() {
+            const container = document.getElementById('payment-methods');
+            const newMethod = document.createElement('div');
+            newMethod.className = 'payment-method';
+            newMethod.innerHTML = `
+                <select name="payment_method[]" required>
+                    <option value="">Select Method</option>
+                    <option value="Cash">💵 Cash</option>
+                    <option value="Credit Card">💳 Credit Card</option>
+                    <option value="NETS">🏧 NETS</option>
+                    <option value="PayNow">📱 PayNow</option>
+                    <option value="eWallet">📲 eWallet</option>
+                    <option value="Voucher">🎫 Voucher</option>
+                </select>
+                <input type="number" name="payment_amount[]" step="0.01" min="0.01" placeholder="Amount" required>
+                <button type="button" class="danger" onclick="removePaymentMethod(this)" style="padding: 8px 12px;">×</button>
+            `;
+            container.appendChild(newMethod);
+        }
+        
+        function removePaymentMethod(btn) {
+            const methods = document.querySelectorAll('.payment-method');
+            if (methods.length > 1) {
+                btn.parentElement.remove();
+            } else {
+                alert('At least one payment method is required.');
+            }
+        }
+        
+        // Global variables for cascading dropdowns
+        let servicesData = [];
+        let therapistsData = [];
+        let roomsData = [];
+        let originalTherapists = [];
+        let currentTherapistId = null;
+        let currentServiceId = null;
+        
+        // Full Edit Modal Functions
+        function openFullEditModal(ttid, serviceName, serviceId, scheduledStart, cost, discount, discountType, therapistId, roomId) {
+            document.getElementById('fullEditModal').style.display = 'block';
+            document.getElementById('full-edit-ttid').value = ttid;
+            document.getElementById('full-edit-discount').value = discount || 0;
+            document.getElementById('full-edit-discount-type').value = discountType || 'none';
+            
+            // Store current IDs for reference
+            currentTherapistId = therapistId;
+            currentServiceId = serviceId;
+            
+            // Parse scheduled start
+            if (scheduledStart && scheduledStart !== 'None') {
+                const dateStr = scheduledStart.toString();
+                const date = new Date(dateStr);
+                if (!isNaN(date.getTime())) {
+                    document.getElementById('full-edit-date').value = date.toISOString().split('T')[0];
+                    document.getElementById('full-edit-hour').value = String(date.getHours()).padStart(2, '0');
+                    document.getElementById('full-edit-minute').value = String(Math.floor(date.getMinutes() / 5) * 5).padStart(2, '0');
+                }
+            }
+            
+            // Fetch data via AJAX
+            fetch(`/cashier/api/edit-options/{{ transaction[0] }}?ttid=${ttid}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    
+                    // Store data globally
+                    servicesData = data.services || [];
+                    therapistsData = data.therapists || [];
+                    roomsData = data.rooms || [];
+                    
+                    // Populate services dropdown
+                    populateServicesDropdown(serviceId);
+                    
+                    // Populate therapists dropdown
+                    populateTherapistsDropdown(therapistId);
+                    
+                    // Populate rooms dropdown
+                    populateRoomsDropdown(roomId);
+                    
+                    // Initialize filters and totals
+                    filterTherapistsByService();
+                    updateFullEditTotal();
+                    
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to load edit options. Please try again.');
+                });
+        }
+        
+        function populateServicesDropdown(currentServiceId) {
+            const serviceSelect = document.getElementById('full-edit-service');
+            serviceSelect.innerHTML = '';
+            
+            // Add empty option
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.text = '-- Select a service --';
+            serviceSelect.appendChild(emptyOption);
+            
+            // Group services by role (optional)
+            const servicesByRole = {};
+            servicesData.forEach(service => {
+                if (!servicesByRole[service.role]) {
+                    servicesByRole[service.role] = [];
+                }
+                servicesByRole[service.role].push(service);
+            });
+            
+            // Add services grouped by role
+            Object.keys(servicesByRole).forEach(role => {
+                // Add group label
+                const groupLabel = document.createElement('optgroup');
+                groupLabel.label = `🧑‍⚕️ ${role}`;
+                serviceSelect.appendChild(groupLabel);
+                
+                // Add services in this role
+                servicesByRole[role].forEach(service => {
+                    const option = document.createElement('option');
+                    option.value = service.id;
+                    option.text = `${service.name} - $${service.cost.toFixed(2)} (${service.duration}min)`;
+                    option.dataset.role = service.role;
+                    option.dataset.cost = service.cost;
+                    option.dataset.duration = service.duration;
+                    if (service.id == currentServiceId) {
+                        option.selected = true;
+                    }
+                    groupLabel.appendChild(option);
+                });
+            });
+        }
+        
+        function populateTherapistsDropdown(currentTherapistId) {
+            const therapistSelect = document.getElementById('full-edit-therapist');
+            therapistSelect.innerHTML = '';
+            originalTherapists = [];
+            
+            // Add empty option
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.text = '-- Select a therapist --';
+            therapistSelect.appendChild(emptyOption);
+            
+            // Group therapists by role
+            const therapistsByRole = {};
+            therapistsData.forEach(therapist => {
+                if (!therapistsByRole[therapist.role]) {
+                    therapistsByRole[therapist.role] = [];
+                }
+                therapistsByRole[therapist.role].push(therapist);
+            });
+            
+            // Add therapists grouped by role
+            Object.keys(therapistsByRole).forEach(role => {
+                // Add group label
+                const groupLabel = document.createElement('optgroup');
+                groupLabel.label = `👤 ${role}`;
+                therapistSelect.appendChild(groupLabel);
+                
+                // Add therapists in this role
+                therapistsByRole[role].forEach(therapist => {
+                    const option = document.createElement('option');
+                    option.value = therapist.id;
+                    option.text = therapist.name;
+                    option.dataset.role = therapist.role;
+                    if (therapist.id == currentTherapistId) {
+                        option.selected = true;
+                    }
+                    groupLabel.appendChild(option);
+                    
+                    // Store for filtering
+                    originalTherapists.push(option.cloneNode(true));
+                });
+            });
+            
+            // Add current therapist if not in available list
+            if (currentTherapistId && !therapistsData.find(t => t.id == currentTherapistId)) {
+                const option = document.createElement('option');
+                option.value = currentTherapistId;
+                option.text = "Current Therapist (may be busy)";
+                option.dataset.role = "unknown";
+                option.selected = true;
+                therapistSelect.appendChild(option);
+            }
+        }
+        
+        function populateRoomsDropdown(currentRoomId) {
+            const roomSelect = document.getElementById('full-edit-room');
+            roomSelect.innerHTML = '';
+            
+            // Add empty option
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.text = '-- Select a room --';
+            roomSelect.appendChild(emptyOption);
+            
+            roomsData.forEach(room => {
+                const option = document.createElement('option');
+                option.value = room.id;
+                option.text = room.name;
+                if (room.id == currentRoomId) {
+                    option.selected = true;
+                }
+                roomSelect.appendChild(option);
+            });
+            
+            // Add current room if not in available list
+            if (currentRoomId && !roomsData.find(r => r.id == currentRoomId)) {
+                const option = document.createElement('option');
+                option.value = currentRoomId;
+                option.text = "Current Room (may be busy)";
+                option.selected = true;
+                roomSelect.appendChild(option);
+            }
+        }
+        
+        function filterTherapistsByService() {
+            const serviceSelect = document.getElementById('full-edit-service');
+            const therapistSelect = document.getElementById('full-edit-therapist');
+            const selectedService = serviceSelect.options[serviceSelect.selectedIndex];
+            
+            if (!selectedService || !selectedService.value) {
+                // No service selected, show all therapists
+                therapistSelect.innerHTML = '';
+                
+                // Re-add empty option
+                const emptyOption = document.createElement('option');
+                emptyOption.value = '';
+                emptyOption.text = '-- Select a therapist --';
+                therapistSelect.appendChild(emptyOption);
+                
+                // Re-add all original therapists
+                originalTherapists.forEach(option => {
+                    therapistSelect.appendChild(option.cloneNode(true));
+                });
+                
+                // Re-add current therapist if exists
+                if (currentTherapistId && !therapistsData.find(t => t.id == currentTherapistId)) {
+                    const option = document.createElement('option');
+                    option.value = currentTherapistId;
+                    option.text = "Current Therapist (may be busy)";
+                    option.dataset.role = "unknown";
+                    therapistSelect.appendChild(option);
+                }
+                
+                validateTherapistRole();
+                return;
+            }
+            
+            const requiredRole = selectedService.dataset.role;
+            
+            // Show service role info
+            const roleInfo = document.getElementById('service-role-info');
+            roleInfo.innerHTML = `<strong>Required Role:</strong> ${requiredRole}`;
+            
+            // Filter therapists by role
+            therapistSelect.innerHTML = '';
+            
+            // Add empty option
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.text = `-- Select a ${requiredRole} --`;
+            therapistSelect.appendChild(emptyOption);
+            
+            // Add only therapists with matching role
+            originalTherapists.forEach(option => {
+                if (option.dataset.role === requiredRole) {
+                    therapistSelect.appendChild(option.cloneNode(true));
+                }
+            });
+            
+            // If current therapist doesn't match role, still show but disabled
+            if (currentTherapistId) {
+                const currentTherapist = therapistsData.find(t => t.id == currentTherapistId);
+                if (currentTherapist && currentTherapist.role !== requiredRole) {
+                    const option = document.createElement('option');
+                    option.value = currentTherapistId;
+                    option.text = `${currentTherapist.name} (Current - WRONG ROLE)`;
+                    option.dataset.role = currentTherapist.role;
+                    option.disabled = true;
+                    therapistSelect.appendChild(option);
+                }
+            }
+            
+            validateTherapistRole();
+        }
+        
+        function validateTherapistRole() {
+            const serviceSelect = document.getElementById('full-edit-service');
+            const therapistSelect = document.getElementById('full-edit-therapist');
+            const validationDiv = document.getElementById('therapist-role-validation');
+            const saveBtn = document.getElementById('save-edit-btn');
+            
+            const selectedService = serviceSelect.options[serviceSelect.selectedIndex];
+            const selectedTherapist = therapistSelect.options[therapistSelect.selectedIndex];
+            
+            if (!selectedService || !selectedService.value || !selectedTherapist || !selectedTherapist.value) {
+                validationDiv.style.display = 'none';
+                saveBtn.disabled = true;
+                return;
+            }
+            
+            const requiredRole = selectedService.dataset.role;
+            const therapistRole = selectedTherapist.dataset.role;
+            
+            if (therapistRole === requiredRole) {
+                validationDiv.className = 'role-validation match';
+                validationDiv.innerHTML = `✅ Perfect match! This therapist can perform ${requiredRole} services`;
+                validationDiv.style.display = 'block';
+                therapistSelect.style.borderColor = '#28a745';
+                saveBtn.disabled = false;
+            } else if (therapistRole === 'unknown') {
+                validationDiv.className = 'role-validation mismatch';
+                validationDiv.innerHTML = `⚠️ Unknown role - this therapist may not be able to perform ${requiredRole} services`;
+                validationDiv.style.display = 'block';
+                therapistSelect.style.borderColor = '#ffc107';
+                saveBtn.disabled = false; // Allow saving with warning
+            } else {
+                validationDiv.className = 'role-validation mismatch';
+                validationDiv.innerHTML = `❌ Role mismatch! Service requires ${requiredRole}, therapist is ${therapistRole}`;
+                validationDiv.style.display = 'block';
+                therapistSelect.style.borderColor = '#dc3545';
+                saveBtn.disabled = true;
+            }
+        }
+        
+        function updateFullEditTotal() {
+            const serviceSelect = document.getElementById('full-edit-service');
+            const selectedService = serviceSelect.options[serviceSelect.selectedIndex];
+            
+            if (selectedService && selectedService.dataset.cost) {
+                const cost = parseFloat(selectedService.dataset.cost);
+                const duration = selectedService.dataset.duration;
+                const discount = parseFloat(document.getElementById('full-edit-discount').value) || 0;
+                
+                document.getElementById('full-edit-cost-display').value = cost.toFixed(2);
+                document.getElementById('full-edit-duration-display').value = duration;
+                
+                const finalPrice = Math.max(0, cost - discount);
+                document.getElementById('full-edit-new-total').textContent = finalPrice.toFixed(2);
+                
+                // Update discount max value
+                document.getElementById('full-edit-discount').max = cost;
+            }
+        }
+        
+        function closeFullEditModal() {
+            document.getElementById('fullEditModal').style.display = 'none';
+            // Reset form
+            document.getElementById('full-edit-form').reset();
+        }
+        
+        // Add form submission validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const editForm = document.getElementById('full-edit-form');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    const serviceSelect = document.getElementById('full-edit-service');
+                    const therapistSelect = document.getElementById('full-edit-therapist');
+                    const selectedService = serviceSelect.options[serviceSelect.selectedIndex];
+                    const selectedTherapist = therapistSelect.options[therapistSelect.selectedIndex];
+                    
+                    if (!selectedService || !selectedService.value) {
+                        e.preventDefault();
+                        alert('Please select a service.');
+                        return false;
+                    }
+                    
+                    if (!selectedTherapist || !selectedTherapist.value) {
+                        e.preventDefault();
+                        alert('Please select a therapist.');
+                        return false;
+                    }
+                    
+                    const requiredRole = selectedService.dataset.role;
+                    const therapistRole = selectedTherapist.dataset.role;
+                    
+                    if (therapistRole && therapistRole !== requiredRole && therapistRole !== 'unknown') {
+                        e.preventDefault();
+                        alert(`Cannot save: Selected therapist is a ${therapistRole}, but this service requires a ${requiredRole}.`);
+                        return false;
+                    }
+                    
+                    if (therapistRole === 'unknown') {
+                        if (!confirm('⚠️ WARNING: This therapist\'s role is unknown. They may not be able to perform this service. Continue anyway?')) {
+                            e.preventDefault();
+                            return false;
+                        }
+                    }
+                });
+            }
+        });
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('fullEditModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

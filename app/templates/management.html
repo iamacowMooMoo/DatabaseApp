@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Management Dashboard - {{ manager[1] }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .nav-bar { background: white; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; gap: 20px; align-items: center; }
+        .nav-bar a { color: #11998e; text-decoration: none; font-weight: 600; padding: 8px 16px; border-radius: 6px; transition: background 0.3s; }
+        .nav-bar a:hover { background: #e8f5e9; }
+        .nav-bar .active { background: #11998e; color: white; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .stat { font-size: 2.5em; font-weight: bold; color: #11998e; }
+        .payment-breakdown { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+        .payment-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; }
+        .payment-method { color: #555; }
+        .payment-amount { font-weight: 600; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #11998e; color: white; }
+        .back { display: inline-block; margin-bottom: 20px; color: #11998e; text-decoration: none; font-weight: bold; }
+        .badge { background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .section-title { font-size: 0.9em; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .sql-badge { font-size: 11px; color: #888; font-style: italic; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ddd; }
+        .hot { color: #e74c3c; font-weight: bold; }
+        .cold { color: #3498db; }
+        .vip-tag { background: #ffd700; color: #333; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back">← Back to Login</a>
+        
+        <div class="header">
+            <h1>Management Dashboard</h1>
+            <p>{{ manager[1] }} ({{ manager[0] }})</p>
+        </div>
+        
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <a href="{{ url_for('management.dashboard') }}" class="active">📊 Dashboard</a>
+            <a href="{{ url_for('management.therapist_admin') }}">👤 Manage Therapists</a>
+        </div>
+        
+        <div class="grid">
+            <!-- Stats Cards with Payment Breakdown -->
+            <div class="card">
+                <div class="section-title">📅 Today</div>
+                <p class="stat">{{ daily.services }}</p>
+                <p>Services</p>
+                <p class="stat">${{ "%.2f"|format(daily.revenue) }}</p>
+                <p>Total Revenue</p>
+                
+                <div class="payment-breakdown">
+                    <strong>By Payment Method:</strong>
+                    {% for payment in daily.payments %}
+                    <div class="payment-row">
+                        <span class="payment-method">{{ payment.method }}</span>
+                        <span class="payment-amount">${{ "%.2f"|format(payment.amount) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="section-title">📊 This Week</div>
+                <p class="stat">{{ weekly.services }}</p>
+                <p>Services</p>
+                <p class="stat">${{ "%.2f"|format(weekly.revenue) }}</p>
+                <p>Total Revenue</p>
+                
+                <div class="payment-breakdown">
+                    <strong>By Payment Method:</strong>
+                    {% for payment in weekly.payments %}
+                    <div class="payment-row">
+                        <span class="payment-method">{{ payment.method }}</span>
+                        <span class="payment-amount">${{ "%.2f"|format(payment.amount) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="section-title">📈 This Month</div>
+                <p class="stat">{{ monthly.services }}</p>
+                <p>Services</p>
+                <p class="stat">${{ "%.2f"|format(monthly.revenue) }}</p>
+                <p>Total Revenue</p>
+                
+                <div class="payment-breakdown">
+                    <strong>By Payment Method:</strong>
+                    {% for payment in monthly.payments %}
+                    <div class="payment-row">
+                        <span class="payment-method">{{ payment.method }}</span>
+                        <span class="payment-amount">${{ "%.2f"|format(payment.amount) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Year to Date Card -->
+            <div class="card">
+                <div class="section-title">🗓️ Year to Date</div>
+                <p class="stat">{{ yearly.services }}</p>
+                <p>Services</p>
+                <p class="stat">${{ "%.2f"|format(yearly.revenue) }}</p>
+                <p>Total Revenue</p>
+                
+                <div class="payment-breakdown">
+                    <strong>By Payment Method:</strong>
+                    {% for payment in yearly.payments %}
+                    <div class="payment-row">
+                        <span class="payment-method">{{ payment.method }}</span>
+                        <span class="payment-amount">${{ "%.2f"|format(payment.amount) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Top Therapists -->
+            <div class="card" style="grid-column: span 2;">
+                <h3>🏆 Top 5 Therapists This Month</h3>
+                <table>
+                    <tr><th>Rank</th><th>Therapist</th><th>Services</th><th>Revenue</th></tr>
+                    {% for t in top_therapists %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ t[0] }}</td>
+                        <td>{{ t[1] }}</td>
+                        <td>${{ "%.2f"|format(t[2]) }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            
+            <!-- Currently Working -->
+            <div class="card">
+                <h3>💆 Currently Working</h3>
+                {% if working_now %}
+                <table>
+                    <tr><th>Therapist</th><th>Room</th><th>Ends</th></tr>
+                    {% for w in working_now %}
+                    <tr>
+                        <td>{{ w[0] }}</td>
+                        <td>{{ w[1] }}</td>
+                        <td>{{ w[3].strftime('%H:%M') }} <span class="badge">{{ w[4]|int }}m left</span></td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% else %}
+                <p>No active services</p>
+                {% endif %}
+            </div>
+            
+            <!-- Available -->
+            <div class="card">
+                <h3>✅ Available Therapists ({{ available|length }})</h3>
+                <ul>
+                    {% for a in available %}
+                    <li>{{ a[0] }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <!-- ========== ADVANCED SQL SECTIONS ========== -->
+            
+            <!-- Room Utilization (RIGHT JOIN) -->
+            <div class="card" style="grid-column: span 2;">
+                <h3>🏢 Room Utilization Analysis</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4 style="color: #e74c3c;">🔥 Most Used (Top 3)</h4>
+                        <table>
+                            <tr><th>Room</th><th>Bookings</th><th>Revenue</th></tr>
+                            {% for room in room_stats.most_used %}
+                            <tr>
+                                <td class="hot">{{ room.name }}</td>
+                                <td class="hot">{{ room.bookings }}</td>
+                                <td class="hot">${{ "%.2f"|format(room.revenue) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                    <div>
+                        <h4 style="color: #3498db;">❄️ Least Used (Bottom 3)</h4>
+                        <table>
+                            <tr><th>Room</th><th>Bookings</th><th>Revenue</th></tr>
+                            {% for room in room_stats.least_used %}
+                            <tr>
+                                <td class="cold">{{ room.name }}</td>
+                                <td class="cold">{{ room.bookings }}</td>
+                                <td class="cold">${{ "%.2f"|format(room.revenue) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </div>
+                <div class="sql-badge">
+                    <strong>SQL Technique:</strong> RIGHT JOIN — Includes all rooms even with zero bookings (shows unused capacity)
+                </div>
+            </div>
+            
+            <!-- Average Metrics (AVG Function) -->
+            <div class="card" style="grid-column: span 2;">
+                <h3>📊 Average Performance Metrics</h3>
+                <table>
+                    <tr>
+                        <th>Period</th>
+                        <th>Avg Spend/Visit</th>
+                        <th>Total Visits</th>
+                        <th>Avg Duration (min)</th>
+                        <th>Services Done</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Today</strong></td>
+                        <td>${{ "%.2f"|format(daily_avg.avg_spend_per_visit) }}</td>
+                        <td>{{ daily_avg.total_visits }}</td>
+                        <td>{{ "%.1f"|format(daily_avg.avg_duration_minutes) }}</td>
+                        <td>{{ daily_avg.completed_services }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>This Week</strong></td>
+                        <td>${{ "%.2f"|format(weekly_avg.avg_spend_per_visit) }}</td>
+                        <td>{{ weekly_avg.total_visits }}</td>
+                        <td>{{ "%.1f"|format(weekly_avg.avg_duration_minutes) }}</td>
+                        <td>{{ weekly_avg.completed_services }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>This Month</strong></td>
+                        <td>${{ "%.2f"|format(monthly_avg.avg_spend_per_visit) }}</td>
+                        <td>{{ monthly_avg.total_visits }}</td>
+                        <td>{{ "%.1f"|format(monthly_avg.avg_duration_minutes) }}</td>
+                        <td>{{ monthly_avg.completed_services }}</td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                        <td><strong>Year to Date</strong></td>
+                        <td>${{ "%.2f"|format(yearly_avg.avg_spend_per_visit) }}</td>
+                        <td>{{ yearly_avg.total_visits }}</td>
+                        <td>{{ "%.1f"|format(yearly_avg.avg_duration_minutes) }}</td>
+                        <td>{{ yearly_avg.completed_services }}</td>
+                    </tr>
+                </table>
+                <div class="sql-badge">
+                    <strong>SQL Technique:</strong> AVG() function with EXTRACT(EPOCH) for time calculations — Compares financial and operational efficiency across time periods
+                </div>
+            </div>
+            
+            <!-- High Spenders (CTE + HAVING) -->
+            <div class="card" style="grid-column: span 2;">
+                <h3>⭐ VIP High Spenders <span class="vip-tag">30%+ Above Average</span></h3>
+                {% if high_spenders %}
+                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
+                    Last month's average: <strong>${{ "%.2f"|format(high_spenders[0].last_month_average) }}</strong> | 
+                    Showing customers who spent 30% or more above this threshold
+                </p>
+                <table>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Mobile</th>
+                        <th>Total Spent</th>
+                        <th>Visits</th>
+                        <th>Avg/Visit</th>
+                        <th>% Above Avg</th>
+                    </tr>
+                    {% for customer in high_spenders %}
+                    <tr>
+                        <td><strong>{{ customer.name }}</strong></td>
+                        <td>{{ customer.mobile }}</td>
+                        <td style="color: #e74c3c; font-weight: bold;">${{ "%.2f"|format(customer.total_spent) }}</td>
+                        <td>{{ customer.visit_count }}</td>
+                        <td>${{ "%.2f"|format(customer.avg_per_visit) }}</td>
+                        <td style="color: #27ae60; font-weight: bold;">+{{ "%.1f"|format(customer.percent_above) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% else %}
+                <p>No customers found spending 30% above last month's average.</p>
+                {% endif %}
+                <div class="sql-badge">
+                    <strong>SQL Technique:</strong> CTE (Common Table Expression) + HAVING clause — Multi-step calculation with post-aggregation filtering for customer segmentation
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select Therapist & Room - Step 3</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 10px; color: #555; font-weight: bold; }
+        select { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+        button { background: #4caf50; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 18px; width: 100%; margin-top: 20px; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .back { display: inline-block; margin-bottom: 20px; color: #4facfe; text-decoration: none; }
+        .step-indicator { color: #999; font-size: 14px; margin-bottom: 10px; }
+        .summary { background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .summary p { margin: 5px 0; }
+        .warning { background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .no-available { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/cashier/transaction/{{ tid }}/add-service-step2" class="back">← Back to Service</a>
+        
+        <div class="header">
+            <div class="step-indicator">Step 3 of 3</div>
+            <h1>👤 Select Therapist & Room</h1>
+            <p>Service: {{ service[1] }} | Required: {{ service[5] }}</p>
+        </div>
+        
+        <div class="card">
+            <div class="summary">
+                <p><strong>Date/Time:</strong> {{ scheduled_start }} to {{ scheduled_end }}</p>
+                <p><strong>Service:</strong> {{ service[1] }} ({{ service[3] }} minutes)</p>
+                <p><strong>Cost:</strong> ${{ "%.2f"|format(service[2]) }}</p>
+            </div>
+            
+            {% if not therapists %}
+            <div class="warning">
+                <strong>No available therapists!</strong> All therapists with {{ service[5] }} role are booked at this time.
+            </div>
+            {% endif %}
+            
+            {% if not rooms %}
+            <div class="warning">
+                <strong>No available rooms!</strong> All rooms are booked at this time.
+            </div>
+            {% endif %}
+            
+            <form action="/cashier/transaction/{{ tid }}/add-service-final" method="POST">
+                <div class="form-group">
+                    <label>Available Therapists ({{ therapists|length }} found)</label>
+                    <select name="therapist_id" required {% if not therapists %}disabled{% endif %}>
+                        {% if therapists %}
+                            {% for t in therapists %}
+                            <option value="{{ t[0] }}">{{ t[1] }} ({{ t[2] }})</option>
+                            {% endfor %}
+                        {% else %}
+                            <option>No therapists available</option>
+                        {% endif %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Available Rooms ({{ rooms|length }} found)</label>
+                    <select name="room_id" required {% if not rooms %}disabled{% endif %}>
+                        {% if rooms %}
+                            {% for r in rooms %}
+                            <option value="{{ r[0] }}">Room {{ r[1] }}</option>
+                            {% endfor %}
+                        {% else %}
+                            <option>No rooms available</option>
+                        {% endif %}
+                    </select>
+                </div>
+                
+                <button type="submit" {% if not therapists or not rooms %}disabled{% endif %}>
+                    {% if therapists and rooms %}✓ Add Service{% else %}Cannot Add - No Availability{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

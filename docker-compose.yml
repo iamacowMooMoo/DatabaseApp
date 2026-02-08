@@ -1,0 +1,118 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    ports:
+      - "22281:5432"
+    environment:
+      POSTGRES_USER: dev_admin
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: spa_db
+      TZ: Asia/Singapore
+      PGTZ: Asia/Singapore
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # ← Changed to named volume
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./seeds.sql:/docker-entrypoint-initdb.d/02-seeds.sql
+    networks:
+      - dev-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev_admin -d spa_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "22277:6379"
+    command: redis-server --save 60 1 --appendonly yes
+    volumes:
+      - redis_data:/data  # ← Changed to named volume
+    networks:
+      - dev-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # MongoDB
+  mongo:
+    image: mongo:latest
+    container_name: spa_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db  # ← Changed to named volume
+      - ./db/mongo_config:/data/configdb
+    networks:
+      - dev-network
+    restart: unless-stopped
+
+  # Flask Application
+  web:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: final_assignment
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgresql://dev_admin:dev_password@postgres:5432/spa_db
+      REDIS_URL: redis://redis:6379/0
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+    volumes:
+      - ./app:/app
+    working_dir: /app
+    networks:
+      - dev-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # pgAdmin
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: dev@cty.com
+      PGADMIN_DEFAULT_PASSWORD: qwer
+    ports:
+      - "22270:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - pgadmin_logs:/var/log/pgadmin
+    networks:
+      - dev-network
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:  # Named volume for PostgreSQL
+    name: spa_postgres_data
+  redis_data:     # Named volume for Redis
+    name: spa_redis_data
+  mongo_data:     # Named volume for MongoDB
+    name: spa_mongo_data
+  pgadmin_data:
+    name: spa_pgadmin_data
+  pgadmin_logs:   # Named volume for logs
+    name: spa_pgadmin_logs
+
+networks:
+  dev-network:
+    name: spa_dev_network

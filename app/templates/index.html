@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spa Management System - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .login-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .login-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+        
+        .login-card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .icon {
+            font-size: 1.5em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        select, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-weight: normal;
+            font-size: 13px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        button.small-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            width: auto;
+        }
+        
+        .no-login-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            margin-top: 10px;
+        }
+        
+        .section-divider {
+            margin: 20px 0;
+            border-top: 2px solid #eee;
+        }
+        
+        .search-results {
+            display: none;
+            margin-top: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .search-results table {
+            width: 100%;
+            font-size: 13px;
+            border-collapse: collapse;
+        }
+        
+        .search-results th {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+        }
+        
+        .search-results td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .search-results tr:hover {
+            background: #f5f5f5;
+            cursor: pointer;
+        }
+        
+        .no-results {
+            display: none;
+            padding: 15px;
+            color: #666;
+            text-align: center;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .selected-customer {
+            display: none;
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .method-toggle {
+            display: flex;
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .method-toggle button {
+            flex: 1;
+            background: transparent;
+            color: #666;
+            font-size: 14px;
+            padding: 8px;
+        }
+        
+        .method-toggle button.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 Spa Management System</h1>
+        <p class="subtitle">Select your role to access the dashboard</p>
+        
+        <div class="login-grid">
+            
+            <!-- 1. CUSTOMER LOGIN - WITH BOTH OPTIONS -->
+            <div class="login-card">
+                <h2><span class="icon">👤</span> Customer</h2>
+                
+                <!-- Method Toggle -->
+                <div class="method-toggle">
+                    <button type="button" id="btn-live-search" class="active" onclick="switchMethod('live-search')">🔍 Live Search</button>
+                    <button type="button" id="btn-dropdown" onclick="switchMethod('dropdown')">📋 Dropdown</button>
+                </div>
+                
+                <!-- LIVE SEARCH METHOD -->
+                <div id="method-live-search">
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="customer_search_type" value="name" checked onchange="clearSearch()">
+                            By Name
+                        </label>
+                        <label>
+                            <input type="radio" name="customer_search_type" value="mobile" onchange="clearSearch()">
+                            By Mobile
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <input type="text" 
+                               id="customer-search-input" 
+                               placeholder="Type to search..." 
+                               autocomplete="off"
+                               oninput="searchCustomers(this.value)">
+                    </div>
+                    
+                    <!-- Search Results -->
+                    <div id="search-results" class="search-results">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Mobile</th>
+                                    <th>Select</th>
+                                </tr>
+                            </thead>
+                            <tbody id="search-results-body">
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- No Results -->
+                    <div id="no-results" class="no-results">
+                        No customers found.
+                    </div>
+                    
+                    <!-- Selected Customer -->
+                    <div id="selected-customer" class="selected-customer">
+                        <p><strong>✓ Selected:</strong> <span id="selected-name"></span></p>
+                        <p style="font-size: 12px; color: #666; margin-top: 5px;"><span id="selected-mobile"></span></p>
+                        <form action="/customer-direct" method="POST" style="margin-top: 10px;">
+                            <input type="hidden" name="customer_id" id="selected-cid">
+                            <button type="submit">Access Customer Portal</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- DROPDOWN METHOD (Hidden by default) -->
+                <div id="method-dropdown" style="display: none;">
+                    <form action="/customer" method="POST">
+                        <input type="hidden" name="search_type" value="dropdown">
+                        <div class="form-group">
+                            <label>Select Customer:</label>
+                            <select name="customer_id" required>
+                                <option value="">-- Choose Customer --</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer[0] }}">{{ customer[1] }} ({{ customer[2] }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit">Access Customer Portal</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 2. MANAGEMENT LOGIN -->
+            <div class="login-card">
+                <h2><span class="icon">💼</span> Management</h2>
+                <form action="/management" method="POST">
+                    <div class="form-group">
+                        <label>Select Manager:</label>
+                        <select name="management_id" required>
+                            <option value="">-- Choose Manager --</option>
+                            {% for emp in management %}
+                            <option value="{{ emp[0] }}">{{ emp[1] }} ({{ emp[3] }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit">Access Management Portal</button>
+                </form>
+            </div>
+            
+            <!-- 3. POLICE/COMPLIANCE - NO LOGIN -->
+            <div class="login-card">
+                <h2><span class="icon">👮</span> Police / Compliance</h2>
+                <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
+                    Access compliance records and customer entry/exit logs.
+                </p>
+                <a href="/police" style="text-decoration: none;">
+                    <button class="no-login-btn">Access Compliance Records</button>
+                </a>
+            </div>
+            
+            <!-- 4. THERAPIST LOGIN -->
+            <div class="login-card">
+                <h2><span class="icon">💆</span> Therapist / Doctor</h2>
+                <form action="/therapist" method="POST">
+                    <div class="form-group">
+                        <label>Select Staff:</label>
+                        <select name="therapist_id" required>
+                            <option value="">-- Choose Staff --</option>
+                            {% for emp in therapists %}
+                            <option value="{{ emp[0] }}">{{ emp[1] }} ({{ emp[3] }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit">Access Staff Portal</button>
+                </form>
+            </div>
+            
+            <!-- 5. CASHIER LOGIN -->
+            <div class="login-card">
+                <h2><span class="icon">💰</span> Cashier / Reception</h2>
+                <form action="/cashier" method="POST">
+                    <div class="form-group">
+                        <label>Select Cashier:</label>
+                        <select name="cashier_id" required>
+                            <option value="">-- Choose Cashier --</option>
+                            {% for emp in cashiers %}
+                            <option value="{{ emp[0] }}">{{ emp[1] }} ({{ emp[3] }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit">Access Cashier Portal</button>
+                </form>
+            </div>
+            
+        </div>
+    </div>
+    
+    <script>
+        // Method Switching
+        function switchMethod(method) {
+            // Update buttons
+            document.getElementById('btn-live-search').classList.remove('active');
+            document.getElementById('btn-dropdown').classList.remove('active');
+            document.getElementById('btn-' + method).classList.add('active');
+            
+            // Show/hide sections
+            document.getElementById('method-live-search').style.display = 
+                method === 'live-search' ? 'block' : 'none';
+            document.getElementById('method-dropdown').style.display = 
+                method === 'dropdown' ? 'block' : 'none';
+        }
+        
+        // Live Search
+        let searchTimer;
+        
+        function searchCustomers(query) {
+            clearTimeout(searchTimer);
+            
+            if (query.length < 2) {
+                document.getElementById('search-results').style.display = 'none';
+                document.getElementById('no-results').style.display = 'none';
+                return;
+            }
+            
+            searchTimer = setTimeout(() => {
+                const searchBy = document.querySelector('input[name="customer_search_type"]:checked').value;
+                
+                fetch(`/api/search-customers?q=${encodeURIComponent(query)}&by=${searchBy}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        displayResults(data);
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                    });
+            }, 300);
+        }
+        
+        function displayResults(customers) {
+            const resultsDiv = document.getElementById('search-results');
+            const resultsBody = document.getElementById('search-results-body');
+            const noResults = document.getElementById('no-results');
+            
+            if (customers.length === 0) {
+                resultsDiv.style.display = 'none';
+                noResults.style.display = 'block';
+                return;
+            }
+            
+            noResults.style.display = 'none';
+            resultsBody.innerHTML = '';
+            
+            customers.forEach(customer => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${customer.name}</td>
+                    <td>${customer.mobile}</td>
+                    <td>
+                        <button type="button" class="small-btn" onclick="selectCustomer(${customer.cid}, '${customer.name}', '${customer.mobile}')">
+                            Select
+                        </button>
+                    </td>
+                `;
+                row.onclick = function(e) {
+                    if (e.target.tagName !== 'BUTTON') {
+                        selectCustomer(customer.cid, customer.name, customer.mobile);
+                    }
+                };
+                resultsBody.appendChild(row);
+            });
+            
+            resultsDiv.style.display = 'block';
+        }
+        
+        function selectCustomer(cid, name, mobile) {
+            document.getElementById('selected-cid').value = cid;
+            document.getElementById('selected-name').textContent = name;
+            document.getElementById('selected-mobile').textContent = mobile;
+            document.getElementById('selected-customer').style.display = 'block';
+            document.getElementById('search-results').style.display = 'none';
+            document.getElementById('customer-search-input').value = '';
+        }
+        
+        function clearSearch() {
+            document.getElementById('customer-search-input').value = '';
+            document.getElementById('search-results').style.display = 'none';
+            document.getElementById('no-results').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
